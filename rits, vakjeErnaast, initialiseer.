@@ -1,0 +1,149 @@
+#include <iostream>
+#include <cstdlib>
+#include <climits>
+#include <fstream>
+using namespace std;
+
+class vakje {
+  public:
+    bool gemarkeerd = false;
+    bool koffie = false;
+    bool geopend = false;
+    int koffieburen = 0;
+    vakje* buren[8] = {nullptr};// 0 is cel er boven, dan klokwijs.
+};//vakje
+
+class koffiebord {
+  public:
+    int hoogte = 20;
+    int breedte = 20;
+    vakje* start = nullptr; // Startpunt van het bord
+
+    void rits();
+    void vakjeErnaast(vakje*& ingang);
+    void initialiseer();
+    void tekenBord();
+};
+
+void koffiebord::rits() {
+  vakje* huidige_rij = start;
+
+  while (huidige_rij != nullptr) {
+    vakje* huidige = huidige_rij;
+    vakje* bovenste = huidige->buren[0]; // Begin bovenste rij
+
+    while (huidige != nullptr) {
+      if (bovenste != nullptr) {
+        // Rechtsboven
+        if (bovenste->buren[2] != nullptr) {
+          huidige->buren[1] = bovenste->buren[2];
+          bovenste->buren[2]->buren[5] = huidige;
+        }
+
+        // Linksboven
+        if (bovenste->buren[6] != nullptr) {
+          huidige->buren[7] = bovenste->buren[6];
+          bovenste->buren[6]->buren[3] = huidige;
+        }
+      }
+
+      huidige = huidige->buren[2]; // Ga naar rechts in huidige rij
+      if (bovenste != nullptr) {
+        bovenste = bovenste->buren[2]; // Ga naar rechts in bovenste rij
+      }
+    }
+
+  huidige_rij = huidige_rij->buren[4]; // Ga naar de volgende rij
+  }
+}
+
+
+void koffiebord::vakjeErnaast(vakje* & ingang){
+  vakje* p = new vakje; // maak een nieuw vakje
+
+  if (ingang != nullptr) { // Als er al een vakje is
+    ingang->buren[2] = p; // Zet het nieuwe vakje rechts van het huidige
+    p->buren[6] = ingang; // Zet het huidige vakje links van het nieuwe
+  }
+
+  ingang = p; // ingang now points to the new cell
+}
+
+
+void koffiebord::initialiseer() {
+    vakje* vorige_rij = nullptr; // Begin met geen bovenste rij
+    start = nullptr; // Begin van het bord
+
+    for (int i = 0; i < hoogte; ++i) {
+        vakje* huidige_rij = nullptr; // Begin van de huidige rij
+        vakje* huidige = nullptr;    // Huidig vakje binnen de rij
+
+        for (int j = 0; j < breedte; ++j) {
+            vakje* nieuw_vakje = new vakje; // Maak een nieuw vakje
+
+            if (huidige == nullptr) {
+                // Eerste vakje in de rij
+                huidige_rij = nieuw_vakje;
+            } else {
+                // Koppel aan het vorige vakje in de rij
+                huidige->buren[2] = nieuw_vakje;  // Rechts
+                nieuw_vakje->buren[6] = huidige; // Links
+            }
+
+            // Koppel aan de vorige rij (boven)
+            if (vorige_rij != nullptr) {
+                nieuw_vakje->buren[0] = vorige_rij;  // Boven
+                vorige_rij->buren[4] = nieuw_vakje; // Onder
+                vorige_rij = vorige_rij->buren[2]; // Volgende vakje in de bovenste rij
+            }
+
+            huidige = nieuw_vakje; // Ga naar het volgende vakje
+        }
+
+        // Verplaats naar de volgende rij
+        if (i == 0) {
+            start = huidige_rij; // Bewaar de bovenste rij als start
+        }
+        vorige_rij = huidige_rij; // Zet de huidige rij als vorige
+    }
+}
+
+
+void koffiebord::tekenBord() {
+  vakje* huidige_rij = start; // Begin bij het startpunt
+  while (huidige_rij != nullptr) {
+    vakje* huidige = huidige_rij; // Begin bij het eerste vakje van de rij
+    while (huidige != nullptr) {
+      // Kies een teken om het vakje weer te geven
+      char teken = '.';
+      if (huidige->geopend) {
+        teken = 'G'; // Geopend vakje
+      } else if (huidige->koffie) {
+        teken = 'K'; // Vakje met koffie
+      } else if (huidige->gemarkeerd) {
+        teken = 'M'; // Gemarkeerd vakje
+      }
+
+      cout << teken << " "; // Print het teken met een spatie
+      huidige = huidige->buren[2]; // Ga naar het volgende vakje in de rij
+    }
+    cout << endl; // Ga naar de volgende rij
+    huidige_rij = huidige_rij->buren[4]; // Ga naar het vakje onderaan in de rij
+  }
+}
+
+
+
+int main( ){
+
+  koffiebord K;
+  K.initialiseer();
+  K.rits();
+  K.tekenBord();
+
+
+
+
+  return 0;
+}
+
